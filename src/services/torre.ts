@@ -1,47 +1,70 @@
 // src/services/torre.ts
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+
 export async function searchPeopleByName(name: string) {
-  if (!name.trim()) return [];
+    try {
+        const response = await fetch(`https://torre.ai/api/entities/_searchStream`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query: name,
+                limit: 10
+            })
+        });
 
-  const response = await fetch("https://torre.ai/api/entities/_searchStream", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "User-Agent": "torre-client",
-      "X-Torre-Identity": "anonymous",
-    },
-    body: JSON.stringify({
-      query: name,
-      identityType: "person",
-      limit: 5,
-      meta: true,
-    }),
-  });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-  if (!response.ok || !response.body) {
-    throw new Error(`Failed to fetch: ${response.status}`);
-  }
+        const reader = response.body?.getReader();
+        if (!reader) {
+            throw new Error('No response body');
+        }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let result = "";
+        let result = '';
+        const decoder = new TextDecoder();
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    result += decoder.decode(value, { stream: true });
-  }
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            result += decoder.decode(value, { stream: true });
+        }
 
-  return result
-    .trim()
-    .split("\n")
-    .map((line) => JSON.parse(line));
+        // Parse the streaming response
+        const lines = result.trim().split('\n');
+        const people = lines
+            .filter(line => line.trim())
+            .map(line => {
+                try {
+                    return JSON.parse(line);
+                } catch {
+                    console.warn('Failed to parse line:', line);
+                    return null;
+                }
+            })
+            .filter(Boolean);
+
+        return people;
+    } catch (error) {
+        console.error('Error searching people:', error);
+        throw error;
+    }
 }
 
-// src/services/torre.ts
 export async function fetchGenome(username: string) {
-  const res = await fetch(`http://localhost:3001/api/genome/${username}`);
-
-  if (!res.ok) throw new Error("Failed to fetch genome");
-
-  return res.json();
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/genome/${username}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching genome:', error);
+        throw error;
+    }
 }
