@@ -14,9 +14,9 @@ const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || "development";
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:5173";
 
-// CORS configuration
+// CORS configuration - allow all origins in production for now
 app.use(cors({
-  origin: CORS_ORIGIN,
+  origin: NODE_ENV === "production" ? "*" : CORS_ORIGIN,
   credentials: true
 }));
 
@@ -49,19 +49,22 @@ app.get("/api/genome/:username", async (req, res) => {
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  res.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    environment: NODE_ENV,
+    port: PORT
+  });
 });
 
-// Serve static files in production
-if (NODE_ENV === "production") {
-  // Serve the React app
-  app.use(express.static(path.join(__dirname, "../dist")));
-  
-  // Handle React routing, return all requests to React app
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../dist/index.html"));
+// Root endpoint
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "Torre Backend API", 
+    status: "running",
+    endpoints: ["/api/genome/:username", "/api/health"]
   });
-}
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
