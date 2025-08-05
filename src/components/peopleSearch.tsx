@@ -34,7 +34,6 @@ export default function PeopleSearch() {
         setLoading(true)
         try {
             const people = await searchPeopleByName(query)
-            console.log(people[0]);
             setResults(people)
         } catch (err) {
             console.error('Error fetching:', err)
