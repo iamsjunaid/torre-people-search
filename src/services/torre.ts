@@ -39,7 +39,7 @@ export async function searchPeopleByName(name: string) {
 
 // src/services/torre.ts
 export async function fetchGenome(username: string) {
-  const res = await fetch(`https://torre.ai/api/genome/bios/${username}`);
+  const res = await fetch(`http://localhost:3001/api/genome/${username}`);
 
   if (!res.ok) throw new Error("Failed to fetch genome");
 
