@@ -1,6 +1,8 @@
 // src/components/PeopleSearch.tsx
 import { useState } from 'react'
-import { searchPeopleByName } from '../services/torre'
+import { searchPeopleByName, fetchGenome } from '../services/torre'
+import ProfileModal from './ProfileModal'
+
 
 type Person = {
     id: string
@@ -13,6 +15,7 @@ export default function PeopleSearch() {
     const [query, setQuery] = useState('')
     const [results, setResults] = useState<Person[]>([])
     const [loading, setLoading] = useState(false)
+    const [selectedPerson, setSelectedPerson] = useState<any>(null)
 
     const handleSearch = async () => {
         if (!query.trim()) return
@@ -20,12 +23,21 @@ export default function PeopleSearch() {
         try {
             const people = await searchPeopleByName(query)
             console.log(people[0]);
-            
+
             setResults(people)
         } catch (err) {
             console.error('Error fetching:', err)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handlePersonClick = async (username: string) => {
+        try {
+            const genome = await fetchGenome(username)
+            setSelectedPerson(genome)
+        } catch (err) {
+            console.error('Error loading profile:', err)
         }
     }
 
@@ -52,10 +64,10 @@ export default function PeopleSearch() {
 
             <ul className="mt-6 space-y-4">
                 {results.map(person => (
-                    <li key={person.id || person.username} className="flex items-center gap-4 border p-4 rounded shadow">
+                    <li key={person.id || person.username} onClick={() => handlePersonClick(person.username)} className="flex items-center gap-4 border p-4 rounded shadow">
                         <img src={person.imageUrl?.trim()
-      ? person.imageUrl
-      : `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random&rounded=true`} alt={person.name} className="w-12 h-12 rounded-full" />
+                            ? person.imageUrl
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random&rounded=true`} alt={person.name} className="w-12 h-12 rounded-full" />
                         <div>
                             <p className="font-semibold">{person.name}</p>
                             <p className="text-gray-500">@{person.username}</p>
@@ -63,6 +75,9 @@ export default function PeopleSearch() {
                     </li>
                 ))}
             </ul>
+
+            {selectedPerson && <ProfileModal person={selectedPerson} onClose={() => setSelectedPerson(null)} />}
+
         </div>
     )
 }

@@ -36,3 +36,12 @@ export async function searchPeopleByName(name: string) {
     .split("\n")
     .map((line) => JSON.parse(line));
 }
+
+// src/services/torre.ts
+export async function fetchGenome(username: string) {
+  const res = await fetch(`https://torre.ai/api/genome/bios/${username}`);
+
+  if (!res.ok) throw new Error("Failed to fetch genome");
+
+  return res.json();
+}
